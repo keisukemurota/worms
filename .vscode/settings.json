@@ -146,4 +146,6 @@
     "cSpell.words": [
       "specificheat"
     ],
+    "julia.environmentPath": "/home/user/project/worms/MinEigLoss/MinEigLoss",
+    "julia.executablePath": "/home/user/.juliaup/bin/julia",
 }

@@ -8,7 +8,7 @@
       "name": "Julia",
       "cwd": "${fileDirname}",
       "program": "${file}",
-      "stopOnEntry": false
+      "stopOnEntry": false,
     },
 
     {

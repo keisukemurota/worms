@@ -109,7 +109,7 @@ function main(seed)
     χ = 2; # number of bond dimensions
     h = FF.ff(d, χ, dim = Val(1), seed = seed);
     # h = -np.load("/home/user/project/worms/python/rmsKit/array/torch/FF1D_loc/s_3_r_2_d_1_seed_1231/1_mel/H/0.npy");
-    L = 4;
+    L = 6;
     h = h - eigmax(h)I
     H = trans_inv_operator(h, 1:2, L) |> Array;
 
@@ -121,27 +121,91 @@ function main(seed)
 
 
     uni_loc = unitary_optimizer(d, mle_unitary, mle_sys_unitary, epochs = 300, runs = 50, params = Dict(:a => 0.02, :b1 => 0.95), type = :unitary);
-    uni_loc.losses_opt |> minimum
-    uni_loc.losses_track |> minimum
+    println(uni_loc.losses_opt |> minimum)
+    println(uni_loc.losses_track |> minimum)
 
     orth_loc = unitary_optimizer(d, mle_unitary, mle_sys_unitary, epochs = 300, runs = 50, params = Dict(:a => 0.02, :b1 => 0.95), type = :orthogonal);
-    orth_loc.losses_opt |> minimum
-    orth_loc.losses_track |> minimum
+    println(orth_loc.losses_opt |> minimum)
+    println(orth_loc.losses_track |> minimum)
 
     orth_sys = unitary_optimizer(d, mle_sys_unitary, mle_unitary, epochs = 300, runs = 20, 
                                             params = Dict(:a => 0.02, :b1 => 0.95), type = :orthogonal);
+    println(orth_sys.losses_opt |> minimum)
+    println(orth_sys.losses_track |> minimum)
 
     spec_sys = special_optimizer(d, mle_sys_special, mle_special, epochs = 200, runs = 20, params = Dict(:a => 0.02, :b1 => 0.95), type = :orthogonal);
+    println(spec_sys.losses_opt |> minimum)
+    println(spec_sys.losses_track |> minimum)
 
     return (uni_loc = uni_loc, orth_loc = orth_loc, orth_sys = orth_sys, spec_sys = spec_sys)
 end
 
 
 res = Dict()
-for i in 1:1000
+for i in 1:300
     seed = rand(10 ^ 5 : 2 * 10^6)  # Generate random seed between 1000 and 9999
     result = main(seed)
     res[seed] = result
     println("seed: $seed is done")
+    println("--" ^ 20)
 end
-save_object(joinpath(dirname(@__FILE__),"pickles", "res.jld2"), res)
+save_object(joinpath(dirname(@__FILE__),"pickles", "res_300.jld2"), res)
+
+
+
+d = 3; # spin degree of freedom
+χ = 2; # number of bond dimensions
+h = FF.ff(d, χ, dim = Val(1), seed = 456773);
+# h = -np.load("/home/user/project/worms/python/rmsKit/array/torch/FF1D_loc/s_3_r_2_d_1_seed_1231/1_mel/H/0.npy");
+L = 6;
+h = h - eigmax(h)I
+H = trans_inv_operator(h, 1:2, L) |> Array;
+
+mle_unitary = MinEigLoss.mle_unitary(h)
+mle_sys_unitary = MinEigLoss.mle_sys_unitary(H, d)
+mle_sys_special = MinEigLoss.mle_sys_special(H, d)
+l1_sys_special = MinEigLoss.l1_sys_special(H, d)
+mle_special = MinEigLoss.mle_special(h)
+
+
+uni_loc = unitary_optimizer(d, mle_unitary, mle_sys_unitary, epochs = 100, runs = 1, params = Dict(:a => 0.02, :b1 => 0.95), type = :unitary);
+
+# mle_sys_unitary(RandomMatrix.Haar(d, Float64))
+
+
+# function sparse(EDKit.Operator)
+#     M = spzeros(eltype(opt), size(opt)...)
+#     if size(M, 1) > 0 && size(M, 2) > 0
+#         addto!(M, opt)
+#     end
+#     M
+# end
+
+using SparseArrays
+H = trans_inv_operator(h, 1:2, L) |> EDKit.sparse
+H = H .|> x -> -abs(x)
+
+v = ones(size(H,1))
+v ./= sqrt(sum(v .* v))
+
+using Arpack
+λ, V = Arpack.eigs(H, which = :SR)
+
+v = (H - (-10)I)\v
+
+H + 9.3I |> Array |> eigmin
+v = (H + 9.3I) \ v
+v ./= sqrt(sum(v .* v))
+
+v' * H * v
+eigmin(H |> Array)
+
+
+
+
+
+λ
+begin 
+    v = H * v;
+    v ./= sqrt(sum(v .* v))
+end

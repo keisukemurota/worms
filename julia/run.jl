@@ -156,8 +156,6 @@ for i in 1:1000
 end
 save_object("./julia/pickles/res.jld2", res)
 
-
-
 # # Print minimum losses for the last seed (if you want to keep this functionality)
 # last_seed = collect(keys(res))[end]
 # println("Minimum orth_sys loss for seed $last_seed: ", minimum(res[last_seed].orth_sys.losses_opt))

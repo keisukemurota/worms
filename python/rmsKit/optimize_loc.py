@@ -89,7 +89,7 @@ if __name__ == "__main__":
         loss_dir = f"{params['lt']}_{args.loss}"
     elif args.loss == "none":
         h_list, _, _ = get_model(args.model, params)
-        loss = rms_torch.MinimumEnergyLoss(h_list, device=device, decay=0)
+        loss = rms_torch.MinimumEnergyLoss(torch.tensor(h_list), device=device)
         loss_dir = f"{params['lt']}_{args.loss}"
         optim_name = "none"
         logging.info(

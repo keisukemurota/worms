@@ -122,7 +122,6 @@ function adjoint_sys_ham(h :: AbstractArray, sys_grad)
     rem_s = div(sys_s, loc_s)
     grad = zero(h)
     sys_grad = sys_grad .* n_site
-    dh = zero(h)
     for k = 1:loc_s
         for l = 1:loc_s
             for i = 1:rem_s

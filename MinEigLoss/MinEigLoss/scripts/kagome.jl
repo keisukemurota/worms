@@ -1,4 +1,3 @@
-
 using Pkg
 Pkg.activate("./MinEigLoss/MinEigLoss")
 using MinEigLoss
@@ -10,6 +9,7 @@ using Test
 using ProgressBars
 using Printf
 using Random
+using JLD2
 
 function random_theta(d, type = :orthogonal)
     if type == :orthogonal
@@ -108,7 +108,8 @@ for jx in Jx, jy in Jy
     res[(jx, jy)] = (loss = res_o.losses_opt[minidx], theta = res_o.thetas[minidx], h = hs)
 end
 
-save_object(joinpath(dirname(@__FILE__),"pickles", "KH_orthogonal2.jld2"), res)
+res = load_object(joinpath(dirname(@__FILE__),"pickles", "KH_unitary.jld2"))
+# load
 
 
 z = Float64[]
@@ -116,7 +117,7 @@ function color(jx, jy)
     if jy <= -jx
         return 0.0
     end
-    h = res[(jx, jy)].h
+    hs = res[(jx, jy)].h
     mle_unitary_losses = [MinEigLoss.mle_unitary(h) for h in hs]
     mle_unitary_loss(u) = sum([loss(u) for loss in mle_unitary_losses])
 
@@ -126,8 +127,27 @@ function color(jx, jy)
 end
 
 
-using Plots
-heatmap(Jx, Jy, [color(jx, jy) for jy in Jy, jx in Jx])
+# using Plots
+heatmap(
+    Jx, 
+    Jy, 
+    [color(jx, jy) for jy in Jy, jx in Jx], 
+    size = (700, 700),
+    aspect_ratio = :equal,
+    xlims = (-2, 2),
+    ylims = (-2, 2),
+    xlabel = "Jx",
+    ylabel = "Jy",
+    title = "L1 adaptive loss (unitary)",
+    colorbar = true,
+    c = :Reds,
+    # margin = 0Plots.mm,
+    rightmargin = 2Plots.mm,
+    titlefontsize = 20,
+    guidefontsize = 12,
+    tickfontsize = 12,
+    legendfontsize = 12,
+)
 
 
 

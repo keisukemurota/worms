@@ -6,8 +6,6 @@ file = joinpath(dirname(@__FILE__),"pickles", "res.jld2")
 
 res_list = load_object(file);
 
-res[1] |> typeof |> fieldnames
-
 begin 
     η1 = []
     η2 = []
@@ -30,13 +28,16 @@ scatter(η1, η2,
     xlabel="orthogonal", 
     ylabel="special linear", 
     title="Negativity optimized with orthogonal and special linear",
-    size=(800, 600),  # Increase plot size to 800x600 pixels
+    size=(1000, 1000),  # Increase plot size to 800x600 pixels
     markersize=5,  # Optionally increase marker size for better visibility
     fontsize=40,  # Increase font size for better readability
-    titlefontsize=16,  # Increase title font size
-    guidefontsize=16,  # Increase font size for axis labels
+    titlefontsize=20,  # Increase title font size
+    guidefontsize=20,  # Increase font size for axis labels
     tickfontsize=10,  # Increase font size for tick labels
     legend=false,
+    aspect_ratio = 1,
+    xlims = (0, 1.5),
+    ylims = (0, 1.5),
 )
 
 

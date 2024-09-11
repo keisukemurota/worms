@@ -1,0 +1,23 @@
+T = 10.00000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.0148029 +- 0.000726339,Energy per site      = 1.05314 +- 0.00175953,Average sign         = 0.99994 +- 2.5869e-05
+T = 5.00000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.0521068 +- 0.00165024,Energy per site      = 0.918724 +- 0.00142772,Average sign         = 0.99918 +- 0.00013293
+T = 3.33333333333333333333,sweeps(in total)        : 200000,Specific heat        = 0.107868 +- 0.00293584,Energy per site      = 0.794144 +- 0.00129366,Average sign         = 0.99763 +- 0.00021999
+T = 2.50000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.161906 +- 0.0036104,Energy per site      = 0.687528 +- 0.00125946,Average sign         = 0.99451 +- 0.000292619
+T = 2.00000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.223991 +- 0.00524623,Energy per site      = 0.590672 +- 0.00118021,Average sign         = 0.99001 +- 0.000396905
+T = 1.66666666666666666666,sweeps(in total)        : 200000,Specific heat        = 0.280026 +- 0.00674374,Energy per site      = 0.50897 +- 0.00118569,Average sign         = 0.98376 +- 0.000514191
+T = 1.42857142857142857142,sweeps(in total)        : 200000,Specific heat        = 0.322416 +- 0.00742328,Energy per site      = 0.439002 +- 0.00113096,Average sign         = 0.97716 +- 0.000717542
+T = 1.25000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.345387 +- 0.00884264,Energy per site      = 0.376944 +- 0.00103127,Average sign         = 0.96791 +- 0.0007709
+T = 1.11111111111111111111,sweeps(in total)        : 200000,Specific heat        = 0.392984 +- 0.0105565,Energy per site      = 0.326289 +- 0.00104507,Average sign         = 0.95868 +- 0.000851107
+T = 1.00000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.407168 +- 0.0122198,Energy per site      = 0.283882 +- 0.000970544,Average sign         = 0.94973 +- 0.00101966
+T = .76923076923076923076,sweeps(in total)        : 200000,Specific heat        = 0.421891 +- 0.0164573,Energy per site      = 0.189293 +- 0.000885309,Average sign         = 0.91636 +- 0.00125257
+T = .66666666666666666666,sweeps(in total)        : 200000,Specific heat        = 0.420105 +- 0.0196559,Energy per site      = 0.150142 +- 0.000795755,Average sign         = 0.89695 +- 0.0014445
+T = .55555555555555555555,sweeps(in total)        : 200000,Specific heat        = 0.370311 +- 0.0233596,Energy per site      = 0.105405 +- 0.000761078,Average sign         = 0.86704 +- 0.00164904
+T = .50000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.391402 +- 0.0281561,Energy per site      = 0.0847808 +- 0.00074095,Average sign         = 0.8406 +- 0.0018817
+T = .40000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.295559 +- 0.0353339,Energy per site      = 0.0511446 +- 0.000731768,Average sign         = 0.79225 +- 0.00212882
+T = .33333333333333333333,sweeps(in total)        : 200000,Specific heat        = 0.261459 +- 0.0424969,Energy per site      = 0.030218 +- 0.00065933,Average sign         = 0.74346 +- 0.00225042
+T = .28571428571428571428,sweeps(in total)        : 200000,Specific heat        = 0.249613 +- 0.0542843,Energy per site      = 0.0185659 +- 0.000665001,Average sign         = 0.70553 +- 0.00248569
+T = .25000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.18953 +- 0.064746,Energy per site      = 0.0104016 +- 0.000655467,Average sign         = 0.66312 +- 0.00267591
+T = .21739130434782608695,sweeps(in total)        : 200000,Specific heat        = 0.234152 +- 0.0835752,Energy per site      = 0.0034322 +- 0.00056588,Average sign         = 0.62137 +- 0.00298169
+T = .20000000000000000000,sweeps(in total)        : 200000,Specific heat        = 0.0279501 +- 0.0877689,Energy per site      = 0.000648799 +- 0.000568401,Average sign         = 0.59534 +- 0.00297866
+T = .16666666666666666666,sweeps(in total)        : 200000,Specific heat        = 0.293756 +- 0.118693,Energy per site      = -0.00646448 +- 0.000608107,Average sign         = 0.5315 +- 0.00354846
+T = .14285714285714285714,sweeps(in total)        : 200000,Specific heat        = 0.340546 +- 0.151353,Energy per site      = -0.00981606 +- 0.000596144,Average sign         = 0.48238 +- 0.00357371
+

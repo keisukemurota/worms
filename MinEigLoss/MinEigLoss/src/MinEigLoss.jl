@@ -54,13 +54,25 @@ function H̄s(H, w)
     W * H * inv(W)
 end
 
+function stochastic(A)
+    B = copy(A)
+    for i in 1:size(A, 1)
+        for j in 1:size(A, 2)
+            if i != j
+                B[i, j] = -abs(A[i, j])
+            end
+        end
+    end
+    return B
+end
+
 function H̄_abs(H, u)
-    res = -abs.(H̄(H, u))
+    res = stochastic(H̄(H, u))
     return Hermitian(res)
 end
 
 function H̄s_abs(H, u)
-    res = -abs.(H̄s(H, u))
+    res = stochastic(H̄s(H, u))
     return res
 end
 
@@ -193,13 +205,35 @@ function mle_sys_unitary(H:: AbstractMatrix, s_loc :: Int)
     return wrapper_special
 end
 
+function mle_sys_unitary_free(H:: AbstractMatrix, s_loc :: Int)
+    s_sys = size(H, 1)
+    n_rep :: Int = log(s_loc, s_sys) |> round |> Int
+    e0 = eigmin(H) |> abs
+    function kron_w(w)
+        W = kron(w, w)
+        for i in 1:n_rep-2
+            W = kron(W, w)
+        end
+        return W
+    end
+
+    function wrapper_special(w)
+        w = MinEigLoss.unitary(w)
+        W = kron_w(w)
+        H̄ = (W * H * W') .|> abs
+        return (eigvals(H̄) |> real |> maximum) - e0
+    end
+
+    return wrapper_special
+end
+
 module Opt
 
 using SkewLinearAlgebra
 using Zygote
 using LinearAlgebra
 
-export Adam, step!, foo, SG, SGReg, AdamSpecial
+export Adam, step!, foo, SG, SGReg, AdamSpecial, Adam_multi, rg_update
 
 foo() = println("foo")
 
@@ -228,6 +262,30 @@ function Adam(theta::AbstractArray{T}, loss::Function) where T<:Number
     Adam{T}(theta, loss, m, v, b1, b2, a, eps, t)
 end
 
+mutable struct Adam_multi{T<:Number, N}
+    theta::NTuple{N, Matrix{T}}
+    loss::Function                # Loss function
+    m::NTuple{N, SkewHermitian{T, Matrix{T}}}     # First moment
+    v::NTuple{N, Hermitian{T, Matrix{T}}}     # Second moment
+    b1::Float64                   # Exp. decay first moment
+    b2::Float64                   # Exp. decay second moment
+    a::Float64                    # Step size
+    eps::Float64                  # Epsilon for stability
+    t::Int                  # Time step (iteration)
+end
+
+# Outer constructor
+function Adam_multi(theta::NTuple{N, AbstractArray{T}}, loss::Function) where {N, T<:Number}
+    m = ntuple(i -> skewhermitian(zero(theta[i])), Val(N))
+    v = ntuple(i -> Hermitian(zero(theta[i])), Val(N))
+    b1 = 0.9
+    b2 = 0.999
+    a = 0.001
+    eps = 1e-8
+    t = 0
+    Adam_multi{T, N}(theta, loss, m, v, b1, b2, a, eps, t)
+end
+
 function rg_update(X::AbstractArray{T}, rg::AbstractArray{T}) where T<:Number
     return exp(-rg) * X
 end
@@ -249,10 +307,25 @@ function step!(opt::Adam{Float64})
     opt.theta = rg_update(opt.theta, rg′)
 end
 
+
+function step!(opt::Adam_multi{Float64})
+    opt.t += 1
+    gt′ = Zygote.gradient(opt.loss, opt.theta)[1]
+    for i in 1:length(opt.theta)
+        gt = skewhermitian((gt′[i] - gt′[i]') / 2)
+        println(gt)
+        opt.m[i][:] = opt.b1 * opt.m[i] + (1 - opt.b1) * gt
+        opt.v[i][:] = Hermitian(opt.b2 * opt.v[i] + (1 - opt.b2) * (gt .^ 2))
+        mhat = opt.m[i] ./ (1 - opt.b1^opt.t)
+        vhat = opt.v[i] ./ (1 - opt.b2^opt.t)
+        rg′ = opt.a .* (mhat ./ (sqrt.(vhat) .+ opt.eps))
+        opt.theta[i][:] = rg_update(opt.theta[i], rg′)
+    end
+end
+
 function step!(opt::Adam{Complex{Float64}})
     opt.t += 1
     gt′ = Zygote.gradient(opt.loss, opt.theta)[1]
-    # println(gt′ - gt′')
     gt = skewhermitian((gt′ - gt′') / 2)
     opt.m = opt.b1 * opt.m + (1 - opt.b1) * gt
     vr = Hermitian(opt.b2 * real(opt.v) + (1 - opt.b2) * (real(gt) .^ 2))
@@ -302,6 +375,25 @@ function step!(opt::AdamSpecial{Float64})
     vhat = opt.v ./ (1 - opt.b2^opt.t)
     rg′ = opt.a .* (mhat ./ (sqrt.(vhat) .+ opt.eps))
     opt.theta = rg_update(opt.theta, rg′)
+end
+
+function step!(opt::AdamSpecial{Complex{Float64}})
+    opt.t += 1
+    gt = Zygote.gradient(opt.loss, opt.theta)[1]
+    # gt = skewhermitian((gt′ - gt′') / 2)
+    opt.m = opt.b1 * opt.m + (1 - opt.b1) * gt
+    vr = opt.b2 * real(opt.v) + (1 - opt.b2) * (real(gt) .^ 2)
+    vi = opt.b2 * imag(opt.v) + (1 - opt.b2) * (imag(gt) .^ 2)
+    opt.v = vr +  vi * 1im
+    mhat = opt.m ./ (1 - opt.b1^opt.t)
+    mr = real(mhat)
+    mi = imag(mhat)
+    vhatr = vr ./ (1 - opt.b2^opt.t)
+    vhati = vi ./ (1 - opt.b2^opt.t)
+    rg′_r = opt.a .* (mr ./ (sqrt.(vhatr) .+ opt.eps))
+    rg′_i = opt.a .* (mi ./ (sqrt.(vhati) .+ opt.eps))
+    rg = rg′_r + 1im * rg′_i
+    opt.theta = rg_update(opt.theta, rg)
 end
 
 

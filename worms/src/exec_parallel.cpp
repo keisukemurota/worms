@@ -205,5 +205,3 @@ template map_wobs_t exe_worm_parallel<bcl::st2013>(
 template map_wobs_t exe_worm_parallel<bcl::heatbath>(
     model::base_model<bcl::heatbath> spin_model, double T, size_t sweeps,
     size_t therms, int64_t cutoff_l, bool fix_wdensity, int rank,
-    std::vector<batch_res> &res, alps::alea::autocorr_result<double> &ac_res,
-    model::observable obs, model::MapWormObs wobs, double &borate, int seed);

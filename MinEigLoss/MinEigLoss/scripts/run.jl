@@ -10,7 +10,6 @@ using Zygote
 using ITensors
 using JLD2
 
-
 RandomMatrix.Haar(3, ComplexF64) |> det
 
 function unitary_optimizer(d, optimizing_loss, tracking_loss; epochs, runs, params, type = :orthogonal)
@@ -118,22 +117,40 @@ end
 heisenberg(Js = [1, 1, 1, 1], hx = 0.0, dim = 1, D = 3)
 
 
-
-
+function mg_local(Js :: Vector{<:Real})
+    @assert length(Js) == 3
+    h = spin("XX") + spin("YY") + spin("ZZ")
+    h = h ./ 4
+    hs = map(Js) do J
+        J .* h
+    end
+    bonds = [
+        [1, 2], [3, 4],
+        [2, 3],
+        [1, 3], [2, 4]
+    ]
+    mats = [
+        hs[2] ./ 2, hs[2] ./ 2,
+        hs[3],
+        hs[1], hs[1]
+    ]
+    EDKit.operator(mats, bonds, 4) |> EDKit.sparse
+end
 
 function main(seed ; Js = [], hx = [])
-    d = 2; # spin degree of freedom
-    # χ = 2; # number of bond dimensions
-    # h = FF.ff(d, χ, dim = Val(1), seed = seed);
+    d = 3; # spin degree of freedom
+    χ = 2; # number of bond dimensions
+    h = FF.ff(d, χ, dim = Val(1), seed = seed);
     # Generate random coupling constants
-    Random.seed!(seed);
-    if Js == []
-        Js = rand(Float64, 4) .* 2 .- 1
-        Js .*= 2
-        hx = rand(Float64) *2 - 1
-    end
+    # Random.seed!(seed);
+    # if Js == []
+    #     Js = rand(Float64, 3) .* 2 .- 1
+    #     Js .*= 2
+    #     hx = rand(Float64) *2 - 1
+    # end
     print("Js : ", Js, "hx : ", hx)
-    h = heisenberg(Js = Js, hx = hx, dim = 1, D = d) |> Array
+    # h = heisenberg(Js = Js, hx = hx, dim = 1, D = d) |> Array
+    # h = mg_local(Js) |> Array
     L = 3;
     # h = h - eigmax(h)I
     # h = h - 100I
@@ -146,35 +163,29 @@ function main(seed ; Js = [], hx = [])
     mle_special = MinEigLoss.mle_special(h)
 
     if mle_sys_unitary(I(d)) < 1e-4
-        return (orth_sys = [], spec_sys = [], h = h, H = H)
+        return (spec_sys_orth = [], spec_sys_uni = [], uni_sys = [], orth_sys = [], h = h, H = H)
     end
 
     println("initial loss unitary: ", mle_sys_unitary(I(d)))
     println("initial loss special: ", mle_sys_special(I(d)))
 
-
-    # uni_loc = unitary_optimizer(d, mle_unitary, mle_sys_unitary, epochs = 100, runs = 30, params = Dict(:a => 0.02, :b1 => 0.95), type = :unitary);
-    # println(uni_loc.losses_opt |> minimum)
-    # println(uni_loc.losses_track |> minimum)
-
-    # orth_loc = unitary_optimizer(d, mle_unitary, mle_sys_unitary, epochs = 100, runs = 30, params = Dict(:a => 0.02, :b1 => 0.95), type = :orthogonal);
-    # println(orth_loc.losses_opt |> minimum)
-    # println(orth_loc.losses_track |> minimum)
-
-    uni_sys = unitary_optimizer(d, mle_sys_unitary, mle_unitary, epochs = 200, runs = 50, 
-                                            params = Dict(:a => 0.02, :b1 => 0.95), type = :unitary);
-    println(uni_sys.losses_opt |> minimum)
+    # uni_sys = []
+    # uni_sys = unitary_optimizer(d, mle_sys_unitary, mle_unitary, epochs = 200, runs = 50, 
+                                            # params = Dict(:a => 0.02, :b1 => 0.95), type = :unitary);
+    # println(uni_sys.losses_opt |> minimum)
 
     orth_sys = unitary_optimizer(d, mle_sys_unitary, mle_unitary, epochs = 200, runs = 50, 
-                                            params = Dict(:a => 0.02, :b1 => 0.95), type = :orthogonal);
+                                            params = Dict(:a => 0.03, :b1 => 0.95), type = :unitary);
     println(orth_sys.losses_opt |> minimum)
     # println(orth_sys.losses_track |> minimum)
 
-    spec_sys = special_optimizer(d, mle_sys_special, mle_special, epochs = 200, runs = 50, params = Dict(:a => 0.02, :b1 => 0.95), type = :unitary);
-    println(spec_sys.losses_opt |> minimum)
-    # println(spec_sys.losses_track |> minimum)
+    spec_sys_orth = special_optimizer(d, mle_sys_special, mle_special, epochs = 200, runs = 50, 
+    params = Dict(:a => 0.03, :b1 => 0.95), type = :unitary);
+    println(spec_sys_orth.losses_opt |> minimum)
 
-    return (spec_sys = spec_sys, uni_sys = uni_sys, orth_sys = orth_sys, h = h, H = H)
+    spec_sys_uni = []
+
+    return (spec_sys_orth = spec_sys_orth, spec_sys_uni = spec_sys_uni, uni_sys = uni_sys, orth_sys = orth_sys, h = h, H = H)
     # return (spec_sys = spec_sys, h = h, H = H)
 end
 
@@ -192,16 +203,16 @@ for i in 1:100
     println("--" ^ 20)
 end
 
-r = main(320903);
+# r = main(320903);
 
-r2 = main(320903, Js = [-1, 0.5, 1.5, 0], hx = 0.0);
+# r2 = main(320903, Js = [-1, 0.5, 1.5, 0], hx = 0.0);
 
-Jy = 0:0.1:2
-Jz = 0:0.1:2
+Jy = 0:0.2:4
+Jz = 0:0.2:4
 res = Dict()
 for jy in Jy
     for jz in Jz
-        res[jy, jz] = main(320903, Js = [-1, jy, jz, 0], hx = 0.0)
+        res[jy, jz] = main(320903, Js = [1, jy, jz], hx = 0.0)
         println("jy: $jy, jz: $jz is done")
     end
 end

@@ -66,6 +66,11 @@ function stochastic(A)
     return B
 end
 
+function stochastic_pos(A, offset = 100)
+    A = abs(A + 100I)
+    return A - 100I
+end
+
 function H̄_abs(H, u)
     res = stochastic(H̄(H, u))
     return Hermitian(res)
@@ -177,7 +182,7 @@ function mle_sys_special(H:: AbstractMatrix, s_loc :: Int)
         w = MinEigLoss.special(w)
         W = kron_w(w)
         W_inv = kron_w(inv(w))
-        H̄ = (W * H * W_inv) .|> abs
+        H̄ = (W * H * W_inv) |> stochastic_pos
         return (eigvals(H̄) |> real |> maximum) - e0
     end
 end
@@ -198,7 +203,7 @@ function mle_sys_unitary(H:: AbstractMatrix, s_loc :: Int)
     function wrapper_special(w)
         w = MinEigLoss.unitary(w)
         W = kron_w(w)
-        H̄ = (W * H * W') .|> abs
+        H̄ = (W * H * W') |> stochastic_pos
         return (eigvals(H̄) |> real |> maximum) - e0
     end
 

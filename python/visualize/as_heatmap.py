@@ -9,8 +9,9 @@ import itertools  # noqa
 
 import sys  # noqa
 from pathlib import Path  # noqa
-PYTHON_DIR = Path(__file__).resolve().parents[2]
+PYTHON_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, PYTHON_DIR.resolve().as_posix())
+print(sys.path)
 from rmsKit import utils  # noqa
 logger = utils.get_logger("log.log", level="INFO", stdout=True)
 parser = utils.parser.get_parser()
@@ -44,6 +45,7 @@ params_df = utils.param_dict_normalize(df['ham_path'].apply(utils.extract_parame
 df = pd.concat([df, params_df], axis=1)
 df = df.rename(columns={"T": "temperature"})
 print(df.columns)
+print(len(df))
 
 image_model_dir.mkdir(parents=False, exist_ok=True)
 
@@ -54,7 +56,11 @@ image_model_dir.mkdir(parents=False, exist_ok=True)
 def plot_heatmap(df, fixed_params, heatmap_params, model_name, image_model_dir):
     """Plot the heatmap of the average sign and loss as a function of two parameters."""
     print(fixed_params)
-    print(df.temperature.unique(), df.n_sites.unique(), df.hx.unique())
+    print(df.temperature.unique(), df.n_sites.unique())
+    print(df.columns)
+    df_t = df[(df.temperature == 2) & (df.n_sites == 25) & (df["Jy"] == -1.0) & (df["hx"] == 0.0)]
+    df_t.to_csv(image_model_dir / "filtered_data.csv", index=False)
+    # exit()
     for fixed_values in itertools.product(*fixed_params.values()):
         filtered_df = df.copy()
         figure_name_parts = []
@@ -63,26 +69,30 @@ def plot_heatmap(df, fixed_params, heatmap_params, model_name, image_model_dir):
             filtered_df = filtered_df[filtered_df[key] == value]
             # print(key, value, len(filtered_df))
             figure_name_parts.append(f"{key}_{value}")
+            print(f"{key} : {value}")
+            print("after filtering : len for fixed values : ", len(filtered_df))
+        
 
 
         x_param, y_param = heatmap_params
         x_values = np.sort(filtered_df[x_param].unique())
         y_values = np.sort(filtered_df[y_param].unique())
-        print(x_values, y_values)
         x, y = np.meshgrid(x_values, y_values)
 
         zs = {
             "AS (optimized)": [],
             "AS (original)": [],
-            "Loss (optimized)": [],
-            "Loss (original)": [],
+            "$log(\\eta) / \\beta$ (optimized)": [],
+            "$log(\\eta) / \\beta$ (original)": [],
+            "Loss (optimized)": [], "Loss (original)": [],
         }
 
         # Process data for heatmap
         # print(x, y)
         for Jx, Jy in zip(x.reshape(-1), y.reshape(-1)):
             df_plot = filtered_df[(filtered_df[x_param] == Jx) & (filtered_df[y_param] == Jy)]
-            df_u = df_plot[~df_plot.loss.isna()]
+            # df_u = df_plot[~df_plot.loss.isna()]
+            df_u = df_plot
 
             if len(df_u) == 0:
                 logger.info(
@@ -96,20 +106,36 @@ def plot_heatmap(df, fixed_params, heatmap_params, model_name, image_model_dir):
                 loss = df_u.loss.values[idx]
                 init_loss = df_u.init_loss.values[idx]
                 au = df_u["as"].values[idx]
-                au_err = df_u["as_error"].values[idx] * np.sqrt(N)
+                au_err = df_u["as_error"].values[idx]
+
+                if np.abs(au) < np.abs(au_err) * 5:
+                    au = np.nan
+                    au_err = np.nan
+                
+                au_err *= np.sqrt(N)
+
+
 
             df_h = df_plot[df_plot.loss.isna()]
             if len(df_h) == 0:
-                logger.info(
-                    f"Original System data was not found for {x_param}={Jx}, {y_param}={Jy}")
+                # logger.info(
+                #     f"Original System data was not found for {x_param}={Jx}, {y_param}={Jy}")
                 ah = np.nan
                 ah_err = np.nan
             else:
                 ah = df_h["as"].min()
                 ah_err = df_h["as_error"].min() * np.sqrt(N)
 
+            au = np.maximum(au, 1e-5)
+            ah = np.maximum(ah, 1e-5)
+            nu = -np.log(au) * filtered_df.temperature.values[0]
+            nh = -np.log(ah) * filtered_df.temperature.values[0]
+
+            # print(f"temperature : {filtered_df.temperature.values[0]}")
             zs["AS (optimized)"].append(au)
             zs["AS (original)"].append(ah)
+            zs["$log(\\eta) / \\beta$ (optimized)"].append(nu)
+            zs["$log(\\eta) / \\beta$ (original)"].append(nh)
             zs["Loss (optimized)"].append(loss)
             zs["Loss (original)"].append(init_loss)
 
@@ -117,6 +143,9 @@ def plot_heatmap(df, fixed_params, heatmap_params, model_name, image_model_dir):
         zs["AS (original)"] = np.array(zs["AS (original)"])
         zs["Loss (optimized)"] = np.array(zs["Loss (optimized)"])
         zs["Loss (original)"] = np.array(zs["Loss (original)"])
+        zs["$log(\\eta) / \\beta$ (optimized)"] = np.array(zs["$log(\\eta) / \\beta$ (optimized)"])
+        zs["$log(\\eta) / \\beta$ (original)"] = np.array(zs["$log(\\eta) / \\beta$ (original)"])
+        # print("loss optimized : ",zs["Loss (optimized)"])
         # Replace nan with largest value
         zs["AS (optimized)"][np.isnan(zs["AS (optimized)"])] = np.nanmin(
             zs["AS (optimized)"])
@@ -126,7 +155,20 @@ def plot_heatmap(df, fixed_params, heatmap_params, model_name, image_model_dir):
             zs["Loss (optimized)"])
         zs["Loss (original)"][np.isnan(zs["Loss (original)"])] = np.nanmin(
             zs["Loss (original)"])
-        print(zs["Loss (optimized)"])
+        zs["$log(\\eta) / \\beta$ (optimized)"][np.isnan(zs["$log(\\eta) / \\beta$ (optimized)"])] = np.nanmax(
+            zs["$log(\\eta) / \\beta$ (optimized)"])
+        zs["$log(\\eta) / \\beta$ (original)"][np.isnan(zs["$log(\\eta) / \\beta$ (original)"])] = np.nanmax(
+            zs["$log(\\eta) / \\beta$ (original)"])
+        
+        zs["$log(\\eta) / \\beta$ (optimized)"][np.isnan(zs["$log(\\eta) / \\beta$ (optimized)"])] = 100
+        zs["$log(\\eta) / \\beta$ (original)"][np.isnan(zs["$log(\\eta) / \\beta$ (original)"])] = 100
+
+        # print(zs["$log(\\eta) / \\beta$ (optimized)"])
+        # print(zs["$log(\\eta) / \\beta$ (original)"])
+
+        zs.pop("AS (optimized)")
+        zs.pop("AS (original)")
+        # print(zs["Loss (optimized)"])
 
         # Plotting
         fig, ax = plt.subplots(2, 2, figsize=(13, 13))
@@ -134,31 +176,44 @@ def plot_heatmap(df, fixed_params, heatmap_params, model_name, image_model_dir):
             max_loss = max(np.max(zs["Loss (optimized)"]), np.max(zs["Loss (original)"]))
         except BaseException as e:
             raise e
-        # max_neg = max(np.max(zs["NegativeSign (optimized)"]), np.max(zs["NegativeSign (initial)"]))
-        # max_neg = min(max_neg, 100)
-        max_neg = 1
+
+        max_eta = max(np.max(zs["$log(\\eta) / \\beta$ (optimized)"]), np.max(zs["$log(\\eta) / \\beta$ (original)"]))
+        max_eta = min(max_eta, 3)
+        max_as = 1
         if np.abs(max_loss) < 1e-5:
             max_loss = 1
 
         for i, (key, z) in enumerate(zs.items()):
             Z = np.array(z).reshape(x.shape)
-            vmin, vmax = (0, max_loss) if "Loss" in key else (0, max_neg)
+            if "eta" in key:
+                vmin, vmax = (0, 1.5)
+            elif "Loss" in key:
+                vmin, vmax = (0, max_loss)
+            else:
+                vmin, vmax = (0, max_as)
 
             # Choose colormap based on whether "Loss" is in the key
             if "Loss" in key:
                 colormap = 'Reds'  # Colormap for loss plots
+            elif "eta" in key:
+                colormap = 'RdPu'  # Colormap for eta plots
             else:
                 colormap = 'RdPu_r'  # Colormap for other plots
-            c = ax[i % 2, i // 2].imshow(Z, cmap=colormap, vmin=vmin, vmax=vmax, aspect="auto",
-                                         extent=[x.min(), x.max(), y.min(), y.max()],
-                                         origin='lower', interpolation='none')
+            if "eeeee" in key:
+                c = ax[i % 2, i // 2].imshow(Z, cmap=colormap, aspect="auto",
+                                            extent=[x.min(), x.max(), y.min(), y.max()],
+                                            origin='lower', interpolation='none')
+            else:
+                c = ax[i % 2, i // 2].imshow(Z, cmap=colormap, vmin=vmin, vmax=vmax, aspect="auto",
+                                            extent=[x.min(), x.max(), y.min(), y.max()],
+                                            origin='lower', interpolation='none')
             ax[i % 2, i // 2].set_title(key, fontsize=25)
             ax[i % 2, i // 2].set_xlabel(x_param, fontsize=20)
             ax[i % 2, i // 2].set_ylabel(y_param, fontsize=20)
             # Adjust font size for tick labels
             ax[i % 2, i // 2].tick_params(axis='both', which='major', labelsize=15)
             cbar = fig.colorbar(c, ax=ax[i % 2, i // 2], fraction=0.06, pad=0.04)
-            if "Loss" in key:
+            if "Loss" in key or "eta" in key:
                 pass
             else:
                 cbar.ax.invert_yaxis()
@@ -207,7 +262,7 @@ elif model_name == "BLBQ1D":
 
 elif model_name == "SS2D":
     fixed_params_MG1D = {
-        "temperature": [0.1],
+        "temperature": [0.1, 0.25, 1],
         "n_sites": [16,36],
         "J0": [1],
         "loss_func": ["-1_none", "1_mel"]

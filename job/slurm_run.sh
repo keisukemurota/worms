@@ -10,11 +10,11 @@
 # Source the blbl.sh script
 #source blbq1d_sim.sh
 #source blbq1d_dimer_sim.sh
-source kh2d_sim.sh
+# source kh2d_sim.sh
 #source hxyz1d_sim.sh
 #source hxyz2d_sim.sh
 # source ss2d_sim.sh
-# source mg1d_sim.sh
+source mg1d_sim.sh
 
 # Set the project directory
 PROJECT_DIR=$(dirname "$(pwd)")
@@ -23,7 +23,7 @@ PROJECT_DIR=$(dirname "$(pwd)")
 SLURM_ARRAY_TASK_ID=$SLURM_ARRAY_TASK_ID
 
 #n_job_per_run=11  # Adjust this for the number of jobs per run
-n_job_per_run=11  # Adjust this for the number of jobs per run
+n_job_per_run=4  # Adjust this for the number of jobs per run
 
 # Run the job (for loop)
 # rm "$PROJECT_DIR"/job_log/log/*

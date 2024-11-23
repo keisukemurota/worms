@@ -6,7 +6,7 @@ calculate_total_jobs() {
     Jx_values=($(seq -2 0.2 2))
     Jy_values=($(seq -2 0.2 2))
     Jz_values=(1)  # Only one Jz value in this case
-    H_values=(0 0.5 1)
+    H_values=(0 0.5)
 
     num_Jx=${#Jx_values[@]}
     num_Jy=${#Jy_values[@]}

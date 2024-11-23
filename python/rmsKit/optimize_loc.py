@@ -200,6 +200,7 @@ if __name__ == "__main__":
     model.reset_params(torch.from_numpy(best_us[0]))
     out = model()
     loss.initializer()
+    loss.weight = 0
     if (abs(best_loss - loss(out).item())) > 1e-8:
         logging.error(
             """

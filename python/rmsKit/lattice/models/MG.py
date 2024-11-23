@@ -43,7 +43,7 @@ def local(params: Dict[str, Any], D: int = 1) -> Tuple[List[NDArray[Any]], int]:
         _h += utils.sum_ham(h_bond, [[0, 1], [2, 3]], 4, 2) * J2 / 2
         h = _h
         sps = 4
-    if lt == -2:
+    elif lt == -2:
         # n: MG model has 3 bonds per site.
         _h = utils.sum_ham(h_bond, [[0, 2]], 4, 2) * J1
         _h += utils.sum_ham(h_bond, [[1, 3]], 4, 2) * J1

@@ -28,8 +28,6 @@ parser.add_argument('--original', action='store_true', default=False,
 
 parser.add_argument('-k', '--top_k', type=int, default=1,
                     help='The number of top unitary paths to consider.')
-parser.add_argument("--obc", action="store_true", default=False,
-                    help="If this flag is set, the open boundary condition will be used.")
 args = parser.parse_args()
 search_path = Path(args.path)
 

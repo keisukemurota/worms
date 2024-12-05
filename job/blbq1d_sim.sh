@@ -55,7 +55,7 @@ run_job() {
 
     LT=1
     SWEEPS=1000000
-    EPOCH=10000
+    EPOCH=1000
     M=40
     model_name="BLBQ1D"
     log_dir="${project_dir}/job/log/${model_name}"

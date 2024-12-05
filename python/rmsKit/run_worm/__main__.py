@@ -20,10 +20,14 @@ parser.add_argument(
     type=str,
     required=True,
     help='The python file will look for the Hamiltonian and the best unitary in this directory.')
+
 parser.add_argument('-s', '--sweeps', type=int, required=True,
                     help='The number of sweeps to perform.')
 parser.add_argument('--original', action='store_true', default=False,
                     help='If this flag is set, the original Hamiltonian will be used.')
+
+parser.add_argument('-k', '--top_k', type=int, default=1,
+                    help='The number of top unitary paths to consider.')
 args = parser.parse_args()
 search_path = Path(args.path)
 
@@ -57,6 +61,8 @@ if __name__ == "__main__":
     elif args.model == "BLBQ1D":
         beta = np.array([1, 4])
         L_list = [[10], [11]]
+        beta_select = 1
+        L_list_select = [4]
         logger.info("RUN BLBQ1D MODEL")
     elif args.model == "FF2D":
         beta = np.array([1])
@@ -86,7 +92,7 @@ if __name__ == "__main__":
         logging.warning("The path will be resolved to {}".format(search_path))
 
     min_loss, init_loss, min_path, ham_path, info_txt_path = utils.path.get_worm_path(
-        search_path, return_info_path=True)
+        search_path)
 
     simu_setting = "sweeps_{}_p_{}".format(M, p)
     if args.original:
@@ -115,6 +121,53 @@ if __name__ == "__main__":
     logger.info("L_list: {}".format(L_list))
     logger.info("T_list: {}".format(T_list))
     logger.info("Summary will be saved to : {}".format(save_path))
+
+    if args.top_k > 1 and beta_select is not None and not args.original:
+        logger.info("Getting the top {} unitary paths".format(args.top_k))
+        top_k_unitary_paths = utils.path.top_k_upath(search_path, args.top_k)
+        logger.info("top_k_unitary_paths: {}".format(top_k_unitary_paths))
+
+        neg_vals = []
+        for loss, path in top_k_unitary_paths:
+            logger.info("test simulation with loss: {}, path: {}".format(loss, path))
+            N_select = 10**5
+            N_select_per_cpu = N_select // p
+            subprocess_out = utils.run_worm(
+                args.model,
+                ham_path,
+                path,
+                L_list_select,
+                1/beta_select,
+                N_select_per_cpu,
+                n=p,
+                logging=True,
+                obc=args.obc,
+                project_dir=rmsKit_directory.parent.parent.resolve())
+            output = subprocess_out.stdout.decode("utf-8")
+
+            match = re.search(r'The result will be written in : "(.+?\.txt)"', output)
+            try:
+                result_file_path = match.group(1)
+                data = extract_info_from_file(
+                    result_file_path, warning=True, allow_missing=False)
+                
+                neg_val = data["as_error"] / data["as"]
+                neg_vals.append((neg_val, loss, path))
+            except Exception as e:
+                logger.error("Exception: {}".format(e))
+                logger.error(
+                    "No result file found. This may be due to an error in the logging in main_MPI.")
+                logger.error("subprocess_out: {}".format(output))
+                continue
+        
+        neg_vals.sort(key=lambda x: x[0])
+
+        min_path = neg_vals[0][2]
+
+        logger.info("selected min_path: {} with negativity {}".format(min_path, neg_vals[0][0]))
+        logger.info("other negative values: {}".format([(neg, loss) for neg, loss, path in neg_vals[1:]]))
+
+
 
     # run the simulation
     data_list = []

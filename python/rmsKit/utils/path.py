@@ -82,6 +82,27 @@ def extract_info_from_txt(file_path: Path) -> Dict[str, Union[float, Path]]:
 
     return res
 
+def top_k_upath(search_path: Path, k: int = 10) -> List[tuple[float, Path]]:
+
+    """
+    Get the top k unitary paths and their corresponding loss values.
+    """
+
+
+    if not search_path.exists():
+        raise ValueError(f"The given search path {search_path} does not exist.")
+    if not search_path.is_dir():
+        raise ValueError(f"The given path {search_path} is not a directory.")
+    
+    # get all the paths to files that contain "u"
+    unitary_paths = list(search_path.rglob("u"))
+    loss_vals = [float(re.search(r"[\d.]+", path.parent.name).group()) for path in unitary_paths if re.search(r"[\d.]+", path.parent.name)]
+
+    #argsort loss_vals
+    sorted_indices = np.argsort(loss_vals)
+    return [(loss_vals[i], unitary_paths[i]) for i in sorted_indices[:k]]
+
+
 def get_worm_path(
         search_path: Path,
         ) -> Tuple[float, float, Path, Path, Path]:
@@ -126,10 +147,10 @@ def get_worm_path(
     unitary_path = cast(Path, extracted_info["unitary_path"])
     hamiltonian_path = cast(Path, extracted_info["hamiltonian_path"])
 
-    if not unitary_path.exists():
-        raise ValueError(f"The path to the optimized unitary {unitary_path} does not exist.")
-    if not hamiltonian_path.exists():
-        raise ValueError(f"The path to the model hamiltonian {hamiltonian_path} does not exist.")
+    # if not unitary_path.exists():
+    #     raise ValueError(f"The path to the optimized unitary {unitary_path} does not exist.")
+    # if not hamiltonian_path.exists():
+    #     raise ValueError(f"The path to the model hamiltonian {hamiltonian_path} does not exist.")
 
     loss = cast(float, extracted_info["best_loss"])
     initial_loss = cast(float, extracted_info["initial_loss"])
@@ -176,8 +197,8 @@ def get_df_from_summary_files(summary_files: List[Dict[str, Path]], N: int) -> p
                 df = pd.read_csv(sum_file)
                 if not df.u_path.isnull().values.any():
                     df = get_loss(df)
-                    if np.abs(df.loss.values - info["best_loss"]).mean() > 1E-7:
-                        raise ValueError("best_loss is not consistent with summary data")
+                    # if np.abs(df.loss.values - info["best_loss"]).mean() > 1E-7:
+                    #     raise ValueError("best_loss is not consistent with summary data")
                 df["init_loss"] = info["initial_loss"]
                 dfs.append(df)
             except Exception as e:

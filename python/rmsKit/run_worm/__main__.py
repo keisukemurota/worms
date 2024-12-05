@@ -59,7 +59,7 @@ if __name__ == "__main__":
         L_list = [[4, 4], [5, 5]]
         logger.info("RUN HXYZ2D MODEL")
     elif args.model == "BLBQ1D":
-        beta = np.array([1, 4])
+        beta = np.array([4])
         L_list = [[10]]
         beta_select = 1
         L_list_select = [4]
@@ -131,14 +131,13 @@ if __name__ == "__main__":
         for loss, path in top_k_unitary_paths:
             logger.info("test simulation with loss: {}, path: {}".format(loss, path))
             N_select = 10**5
-            N_select_per_cpu = N_select // p
             subprocess_out = utils.run_worm(
                 args.model,
                 ham_path,
                 path,
                 L_list_select,
                 1/beta_select,
-                N_select_per_cpu,
+                N_select,
                 n=p,
                 logging=True,
                 obc=args.obc,
@@ -146,6 +145,7 @@ if __name__ == "__main__":
             output = subprocess_out.stdout.decode("utf-8")
 
             match = re.search(r'The result will be written in : "(.+?\.txt)"', output)
+            logger.info("match: {}".format(match.group(1)))
             try:
                 result_file_path = match.group(1)
                 data = extract_info_from_file(
@@ -153,6 +153,7 @@ if __name__ == "__main__":
                 
                 neg_val = data["as_error"] / data["as"]
                 neg_vals.append((neg_val, loss, path))
+                logger.info("simulation fnished. negativity: {}".format(neg_val))
             except Exception as e:
                 logger.error("Exception: {}".format(e))
                 logger.error(

@@ -55,7 +55,7 @@ run_job() {
 
     LT=1
     SWEEPS=1000000
-    EPOCH=10000
+    EPOCH=1000
     M=40
     model_name="BLBQ1D"
     log_dir="${project_dir}/job/log/${model_name}"
@@ -93,9 +93,10 @@ run_job() {
     echo "Finished optimization for BLBQ model with J0=${J0}, J1=${J1}, hz=${hz} and hx=${hx} in CPU ${n_cpu}"
 
 
+    python -u -m run_worm -m $model_name --path "$symbolic_link" -s $SWEEPS -n "$n_cpu" -k 10 --stdout  >> "$log_file"
+
     python -u -m run_worm -m $model_name --path "$symbolic_link" -s $SWEEPS --original -n "$n_cpu" --stdout  >> "$log_file"
 
-    python -u -m run_worm -m $model_name --path "$symbolic_link" -s $SWEEPS -n "$n_cpu" -k 10 --stdout  >> "$log_file"
 
     echo "Finished BLBQ model job with J0=${J0}, J1=${J1}, hz=${hz} and hx=${hx} in CPU ${n_cpu}"
 

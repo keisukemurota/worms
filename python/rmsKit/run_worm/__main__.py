@@ -53,8 +53,8 @@ if __name__ == "__main__":
         beta = np.array([0.5, 1])
         L_list = [[4, 4], [5, 5]]
     elif args.model == "BLBQ1D":
-        beta = np.array([1, 4])
-        L_list = [[10], [11]]
+        beta = np.array([4])
+        L_list = [[10]]
     elif args.model == "FF2D":
         beta = np.array([1])
         L_list = [[4, 4]]

@@ -28,6 +28,8 @@ parser.add_argument('--original', action='store_true', default=False,
 
 parser.add_argument('-k', '--top_k', type=int, default=1,
                     help='The number of top unitary paths to consider.')
+parser.add_argument("--obc", action="store_true", default=False,
+                    help="If this flag is set, the open boundary condition will be used.")
 args = parser.parse_args()
 search_path = Path(args.path)
 
@@ -60,7 +62,7 @@ if __name__ == "__main__":
         logger.info("RUN HXYZ2D MODEL")
     elif args.model == "BLBQ1D":
         beta = np.array([1, 4])
-        L_list = [[10], [11]]
+        L_list = [[10]]
         beta_select = 1
         L_list_select = [4]
         logger.info("RUN BLBQ1D MODEL")

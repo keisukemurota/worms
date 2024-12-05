@@ -147,10 +147,10 @@ def get_worm_path(
     unitary_path = cast(Path, extracted_info["unitary_path"])
     hamiltonian_path = cast(Path, extracted_info["hamiltonian_path"])
 
-    # if not unitary_path.exists():
-    #     raise ValueError(f"The path to the optimized unitary {unitary_path} does not exist.")
-    # if not hamiltonian_path.exists():
-    #     raise ValueError(f"The path to the model hamiltonian {hamiltonian_path} does not exist.")
+    if not unitary_path.exists():
+        raise ValueError(f"The path to the optimized unitary {unitary_path} does not exist.")
+    if not hamiltonian_path.exists():
+        raise ValueError(f"The path to the model hamiltonian {hamiltonian_path} does not exist.")
 
     loss = cast(float, extracted_info["best_loss"])
     initial_loss = cast(float, extracted_info["initial_loss"])
